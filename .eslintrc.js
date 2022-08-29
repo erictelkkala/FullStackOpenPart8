@@ -2,6 +2,7 @@ module.exports = {
     env: {
         browser: true,
         es2021: true,
+        node: true,
     },
     extends: "eslint:recommended",
     overrides: [],
@@ -14,7 +15,7 @@ module.exports = {
         indent: ["error", 4],
         "linebreak-style": ["error", "unix"],
         quotes: ["error", "double"],
-        semi: ["error", "always"],
+        semi: ["error", "never"],
 
         // override configuration set by extending "eslint:recommended"
         "no-empty": "warn",
@@ -23,4 +24,4 @@ module.exports = {
         // disable rules from base configurations
         "for-direction": "off",
     },
-};
+}
