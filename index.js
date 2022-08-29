@@ -123,6 +123,7 @@ const typeDefs = gql`
             author: String!
             genres: [String!]!
         ): Book
+        editAuthor(name: String!, setBornTo: Int!): Author
     }
 `
 
@@ -179,6 +180,18 @@ const resolvers = {
             // Add the book to the books array
             books.push(book)
             return book
+        },
+        editAuthor(root, args) {
+            // Find the author in the authors array
+            const author = authors.find((author) => author.name === args.name)
+            // console.log(args)
+            // Don't do anything if the author does not exist
+            if (author === undefined) {
+                return null
+            }
+            // Note the argument variable name
+            author.born = args.setBornTo
+            return author
         },
     },
 }
