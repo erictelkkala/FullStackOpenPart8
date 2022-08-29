@@ -1,4 +1,5 @@
 const { ApolloServer, gql } = require("apollo-server")
+const { uuid } = require("uuidv4")
 
 let authors = [
     {
@@ -111,8 +112,17 @@ const typeDefs = gql`
     type Query {
         bookCount: Int!
         authorCount: Int!
-        allBooks(author: String): [Book!]!
+        allBooks(author: String, genre: String): [Book!]!
         allAuthors: [Author!]!
+    }
+
+    type Mutation {
+        addBook(
+            title: String!
+            published: Int!
+            author: String!
+            genres: [String!]!
+        ): Book
     }
 `
 
@@ -122,12 +132,22 @@ const resolvers = {
         authorCount: () => authors.length,
         allBooks(root, args) {
             console.log(args.author)
-            // Check if the author is specified
-            if (args.author === undefined) {
+            // Check author and genre are not provided
+            if (args.author === undefined && args.genre === undefined) {
                 return books
-                // If it is specified, then filter the books by the author
-            } else {
+                // If only the author is provided, return all books by that author
+            } else if (args.author !== undefined && args.genre === undefined) {
                 return books.filter((book) => book.author === args.author)
+                // If only the genre is provided, return all books in that genre
+            } else if (args.author === undefined && args.genre !== undefined) {
+                return books.filter((book) => book.genres.includes(args.genre))
+                // If both author and genre are provided, return all books by that author in that genre
+            } else if (args.author !== undefined && args.genre !== undefined) {
+                return books.filter(
+                    (book) =>
+                        book.author === args.author &&
+                        book.genres.includes(args.genre)
+                )
             }
         },
         allAuthors: () => authors,
@@ -136,6 +156,30 @@ const resolvers = {
         // Find the number of books by an author and return the number of occurrences
         bookCountByAuthor: (root) =>
             books.filter((book) => book.author === root.name).length,
+    },
+    Mutation: {
+        addBook(root, args) {
+            // Create a new book object with the provided arguments
+            const book = {
+                title: args.title,
+                published: args.published,
+                author: args.author,
+                id: uuid(),
+                genres: args.genres,
+            }
+            // Check if the author exists
+            const author = authors.find((author) => author.name === args.author)
+            if (author === undefined) {
+                // If the author does not exist, add the author to the authors array
+                authors.push({
+                    name: args.author,
+                    born: null,
+                })
+            }
+            // Add the book to the books array
+            books.push(book)
+            return book
+        },
     },
 }
 
