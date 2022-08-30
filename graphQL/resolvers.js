@@ -1,7 +1,11 @@
 const Author = require("../models/authorModel")
 const Book = require("../models/bookModel")
+const User = require("../models/userModel")
 const mongoose = require("mongoose")
 const { UserInputError } = require("apollo-server")
+const jwt = require("jsonwebtoken")
+require("dotenv").config()
+const JWT_SECRET = process.env.JWT_SECRET
 
 const resolvers = {
     Query: {
@@ -147,6 +151,40 @@ const resolvers = {
             }
             // console.log(args)
             return author
+        },
+        createUser: async (root, args) => {
+            const user = new User({
+                username: args.username,
+                favoriteGenre: args.favoriteGenre,
+                _id: mongoose.Types.ObjectId()
+            })
+            console.log("User:", user)
+            try {
+                return user.save()
+                    .catch(error => {
+                        throw new UserInputError(error.message, {
+                            invalidArgs: args,
+                        })
+                    })
+            } catch (error) {
+                throw new UserInputError(error.message, {
+                    invalidArgs: args,
+                })
+            }
+        },
+        login: async (root, args) => {
+            const user = await User.findOne({ username: args.username })
+        
+            if ( !user || args.password !== "secret" ) {
+                throw new UserInputError("wrong credentials")
+            }
+        
+            const userForToken = {
+                username: user.username,
+                id: user._id,
+            }
+        
+            return { value: jwt.sign(userForToken, JWT_SECRET) }
         },
     },
 }
