@@ -8,35 +8,27 @@ const resolvers = {
         authorCount: async () => Author.find({}).countDocuments(),
         allBooks: async (root, args) => {
             console.log("arguments for allBooks:", args)
-            // Check author and genre are not provided
-            if (args.author === undefined && args.genre === undefined) {
-                await Book.find({}).then((books) => {
-                    return books
-                }).catch((error) => {
-                    console.log("Error getting all books:", error.message)
-                })
-                
-                // If only the author is provided, return all books by that author
-            } else if (args.author !== undefined && args.genre === undefined) {
-                await Book.find({ author: args.author }).then((books) => {
-                    return books
-                }).catch((error) => {
-                    console.log("Error getting all books:", error.message)
-                })
-                // If only the genre is provided, return all books in that genre
-            } else if (args.author === undefined && args.genre !== undefined) {
-                await Book.find({ genres: args.genre }).then((books) => {
-                    return books
-                }).catch((error) => {
-                    console.log("Error getting all books:", error.message)
-                })
-                // If both author and genre are provided, return all books by that author in that genre
-            } else if (args.author !== undefined && args.genre !== undefined) {
-                await Book.find({ author: args.author, genres: args.genre }).then((books) => {
-                    return books
-                }).catch((error) => {
-                    console.log("Error getting all books:", error.message)
-                })
+            // Check author and genre are provided
+            if (args.author && args.genre) {
+                const author = await Author.findOne({ name: args.author })
+                return Book.find({
+                    author: author._id,
+                    genres: args.genre
+                }).populate("author")
+                // Check if only author is provided
+            } else if (args.author) {
+                const author = await Author.findOne({ name: args.author })
+                return Book.find({
+                    author: author._id
+                }).populate("author")
+                // Check if only genre is provided
+            } else if (args.genre) {
+                return Book.find({
+                    genres: args.genre
+                }).populate("author")
+                // Else return all books
+            } else {
+                return Book.find({}).populate("author")
             }
         },
         allAuthors: async () => await Author.find({}).then((authors) => {
