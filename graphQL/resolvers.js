@@ -1,12 +1,19 @@
 const Author = require("../models/authorModel")
 const Book = require("../models/bookModel")
 const mongoose = require("mongoose")
+const { UserInputError } = require("apollo-server")
 
 const resolvers = {
     Query: {
         bookCount: async () => Book.find({}).countDocuments(),
         authorCount: async () => Author.find({}).countDocuments(),
         allBooks: async (root, args) => {
+            if (args.length > 2) {
+                throw new UserInputError("Too many arguments",{
+                    argumentName: "author, genre",
+                })
+            }
+
             console.log("arguments for allBooks:", args)
             // Check author and genre are provided
             if (args.author && args.genre) {
@@ -40,11 +47,30 @@ const resolvers = {
     Author: {
         // Find the number of books by an author and return the number of occurrences
         bookCountByAuthor: async (root) => {
+            if (!root) {
+                throw new UserInputError("No author found", {
+                    argumentName: "author"
+                })
+            }
             return await Book.find({ author: root._id }).countDocuments()
         }
     },
     Mutation: {
         addBook: async(root, args) => {
+            if (args.length > 4) {
+                throw new UserInputError("Too many arguments")
+            } else if (!args.title || !args.published || !args.author || !args.genres) {
+                throw new UserInputError("Missing arguments", {
+                    argumentName: "title, published, author, genres"
+                })
+            } else if (args.length < 4) {
+                throw new UserInputError("Too few arguments")
+            } else if (args.author.length < 4) {
+                throw new UserInputError("Author name is too short", {
+                    argumentName: "author"
+                })
+            }
+
             console.log("arguments:", args)
             // Check if the author exists
             let bookAuthor = await Author.findOne({ name: args.author })
@@ -91,6 +117,23 @@ const resolvers = {
             return newBook
         },
         editAuthor: async (root, args) => {
+            if (!args.name || !args.setBornTo) {
+                throw new UserInputError("Missing arguments", {
+                    argumentName: "name, setBornTo"
+                })
+            } else if (args.setBornTo < 0) {
+                throw new UserInputError("Invalid argument", {
+                    argumentName: "setBornTo"
+                })
+            } else if (args.name.length < 4) {
+                throw new UserInputError("Invalid argument", {
+                    argumentName: "name"
+                })
+            } else if (args.setBornTo.length < 1) {
+                throw new UserInputError("Invalid argument", {
+                    argumentName: "setBornTo"
+                })
+            }
             // Find the author in the authors array
             const author = await Author.findOneAndUpdate({ name: args.name }, { born: args.setBornTo }, { new: true }).then((author) => {
                 console.log("Author edited to:", author)
