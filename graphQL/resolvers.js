@@ -2,7 +2,7 @@ const Author = require("../models/authorModel")
 const Book = require("../models/bookModel")
 const User = require("../models/userModel")
 const mongoose = require("mongoose")
-const { UserInputError } = require("apollo-server")
+const { UserInputError, AuthenticationError } = require("apollo-server")
 const jwt = require("jsonwebtoken")
 require("dotenv").config()
 const JWT_SECRET = process.env.JWT_SECRET
@@ -60,7 +60,11 @@ const resolvers = {
         }
     },
     Mutation: {
-        addBook: async(root, args) => {
+        addBook: async(root, args, context) => {
+            if (!context.currentUser) {
+                throw new AuthenticationError("Not authenticated")
+            }
+
             if (args.length > 4) {
                 throw new UserInputError("Too many arguments")
             } else if (!args.title || !args.published || !args.author || !args.genres) {
@@ -120,7 +124,10 @@ const resolvers = {
             })
             return newBook
         },
-        editAuthor: async (root, args) => {
+        editAuthor: async (root, args, context) => {
+            if (!context.currentUser) {
+                throw new AuthenticationError("Not authenticated")
+            }
             if (!args.name || !args.setBornTo) {
                 throw new UserInputError("Missing arguments", {
                     argumentName: "name, setBornTo"
