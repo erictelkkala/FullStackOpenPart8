@@ -47,6 +47,9 @@ const resolvers = {
         }).catch((error) => {
             console.log("Error getting all authors:", error.message)
         }),
+        me: async (root, args, context) => {
+            return context.currentUser
+        }
     },
     Author: {
         // Find the number of books by an author and return the number of occurrences
