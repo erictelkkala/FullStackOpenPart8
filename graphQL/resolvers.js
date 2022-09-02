@@ -19,28 +19,17 @@ const resolvers = {
             }
 
             console.log("arguments for allBooks:", args)
-            // Check author and genre are provided
-            if (args.author && args.genre) {
-                const author = await Author.findOne({ name: args.author })
-                return Book.find({
-                    author: author._id,
-                    genres: args.genre
-                }).populate("author")
-                // Check if only author is provided
-            } else if (args.author) {
-                const author = await Author.findOne({ name: args.author })
-                return Book.find({
-                    author: author._id
-                }).populate("author")
-                // Check if only genre is provided
-            } else if (args.genre) {
-                return Book.find({
-                    genres: args.genre
-                }).populate("author")
-                // Else return all books
-            } else {
-                return Book.find({}).populate("author")
+            // If the author is defined, assign it to the variable, otherwise null
+            const author = args.author ? await Author.findOne({ name: args.author }) : null
+            // If the author variable is defined, assign the author's id to the variable, otherwise null
+            let query =  author ? { author: author._id } : {}
+            // If the genre is defined, add it to the query object
+            if (args.genre) {
+                query = { ...query, genres: args.genre }
             }
+
+            // Always return the books, but query changes depending on the arguments
+            return Book.find(query).populate("author")
         },
         allAuthors: async () => await Author.find({}).then((authors) => {
             return authors
